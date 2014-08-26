@@ -27,12 +27,12 @@ i18n = function() {
 
 	/* remove extra parameter added by blaze */
 	if (typeof args[args.length-1] === 'object') {
-		args.pop(); 
+		args.pop();
 	}
 
 	var label = args[0];
 	args.shift();
-	
+
 	var data = args[0] ? args[0] : {}
 	  , addedField = args[1] && isOfType(args[1], 'string') ? args[1] : null
 	  , forcedLanguage = args[2] && isOfType(args[2], 'string') ? args[2] : null;
@@ -66,9 +66,10 @@ if (Meteor.isClient) {
 	}
 }
 
+/*
 function replaceWithParams(string, params) {
 	var formatted = string;
-	
+
 	params.forEach(function(param , index){
 		var pos = index + 1;
 		formatted = formatted.replace("{$" + pos + "}", param);
@@ -76,14 +77,40 @@ function replaceWithParams(string, params) {
 
 	return formatted;
 };
+*/
+
+function flattenJSON(json) {
+
+	var result = {};
+	function recurse (cur, prop) {
+		if (Object(cur) !== cur) {
+			result[prop] = cur;
+		} else if (Array.isArray(cur)) {
+			for (var i = 0, l = cur.length; i < l; i++) {
+				recurse(cur[i], prop ? prop + "." + i : "" + i);
+				if (l == 0) result[prop] = [];
+			}
+		} else {
+			var isEmpty = true;
+			for (var p in cur) {
+				isEmpty = false;
+				recurse(cur[p], prop ? prop + "." + p : p);
+			}
+			if (isEmpty) result[prop] = {};
+		}
+	}
+	recurse(json, "");
+	return result;
+
+}
 
 function replaceWithObj(string, data) {
-	
+
 	var formatted = string;
 	if (isOfType(data, 'object')) {
-		var flattened = data ? flattenJSON(data) : {};	
+		var flattened = data ? flattenJSON(data) : {};
 		for (var k in flattened) {
-			formatted = formatted.replace("[[" + k + "]]", flattened[k]);		
+			formatted = formatted.replace("[[" + k + "]]", flattened[k]);
 		}
 	} else {
 		formatted = formatted.replace(/\[\[(.*?)\]\]/ig, data);
